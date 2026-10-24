@@ -1,0 +1,27 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex" />
+  <title>கூவல் — Content Admin</title>
+  <script>window.CMS_MANUAL_INIT = true;</script>
+</head>
+<body>
+  <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
+  <script>
+    // தளத்தின் சொந்த முகவரியையே OAuth base_url ஆகப் பயன்படுத்துகிறது (pages.dev / சொந்த domain இரண்டிலும் வேலை செய்யும்)
+    CMS.init({
+      config: {
+        backend: {
+          name: 'github',
+          repo: 'DrMohanraj/koval',
+          branch: 'main',
+          base_url: window.location.origin,
+          auth_endpoint: 'auth',
+        },
+      },
+    });
+  </script>
+</body>
+</html>

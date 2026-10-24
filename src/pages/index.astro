@@ -1,0 +1,194 @@
+---
+import { getCollection } from 'astro:content';
+import '../styles/global.css';
+
+const all = (await getCollection('interviews')).sort(
+  (a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime()
+);
+const featured = all.find((i) => i.data.featured) ?? all[0];
+
+// ----- Hero (CMS-இல் "Homepage Hero-ல் காட்டவா?" தேர்ந்த நேர்காணல்) -----
+const heroTitle = featured?.data.title ?? 'சொற்களின் மௌனம் பேசும் ஆழ்ந்த வெளி';
+const words = heroTitle.split(' ');
+const hlCount = words.length > 3 ? 2 : 1;
+const titleMain = words.slice(0, words.length - hlCount).join(' ');
+const titleHl = words.slice(words.length - hlCount).join(' ');
+const heroLead = featured?.data.qa?.[0]?.answer ?? featured?.data.excerpt ?? '';
+const heroAuthor = featured?.data.authorName ?? 'எழுத்தாளர் பெயர்';
+const heroPhoto = featured?.data.coverImage || featured?.data.authorPhoto || '/images/hero-placeholder.jpg';
+
+// ----- மேற்கோள்கள்: எல்லா நேர்காணல்களின் pullQuotes -----
+const tints = ['blue', 'sage', 'gold', 'plum', 'olive'];
+const quotes = all.flatMap((i) =>
+  (i.data.pullQuotes ?? []).filter(Boolean).map((q) => ({
+    quote: q,
+    author: i.data.authorName,
+    role: i.data.authorRole ?? '',
+    photo: i.data.authorPhoto ?? '',
+    category: i.data.category,
+    featured: i.id === featured?.id,
+  }))
+);
+const heroQuotes = (featured?.data.pullQuotes ?? []).filter(Boolean).slice(0, 2);
+const orbQuotes = heroQuotes.length ? heroQuotes : quotes.slice(0, 2).map((q) => q.quote);
+
+const withTint = quotes.map((q, i) => ({ ...q, tint: tints[i % tints.length] }));
+const back = withTint.filter((_, i) => i % 2 === 0);
+const front = withTint.filter((_, i) => i % 2 === 1);
+// தடையற்ற சுழற்சிக்கு: குறைந்தது 6 card வரை நிரப்பி, பின் இரட்டிப்பாக்கு
+const fill = (arr) => {
+  if (!arr.length) return [];
+  let out = [...arr];
+  while (out.length < 6) out = out.concat(arr);
+  return out.concat(out);
+};
+const rowBack = fill(back);
+const rowFront = fill(front.length ? front : back.slice().reverse());
+
+const petals = Array.from({ length: 10 }, (_, i) =>
+  `left:${3 + i * 9.5}%; animation-duration:${14 + (i % 4) * 3}s; animation-delay:-${(i * 2.2).toFixed(1)}s;`
+);
+---
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>கூவல் - இலக்கிய மின்னிதழ்</title>
+<meta name="description" content="தமிழ்ச் சமூகத்தின் பன்மைத்துவத்தை கலை, இலக்கியம், சூழலியல் ஆளுமைகளின் வழி உணரும் மாதாந்திர இலக்கிய மின்னிதழ்.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Tamil:wght@400;600;700;800&family=Catamaran:wght@300;400;500;600;700&family=Manrope:wght@400;500;600;700&family=Bodoni+Moda:wght@500;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+</head>
+<body>
+
+
+<!-- ======================================================
+  கூவல் (Koovel) — முகப்புப் பக்கம் மட்டும்
+  Placeholder: எழுத்தாளர் பெயர்கள், படங்கள், மேற்கோள்கள் எல்லாம் மாதிரி content.
+  மற்ற பக்கங்கள் நீக்கப்பட்டதால், மெனு/பொத்தான் இணைப்புகள் இப்போது "#"-ஐக் குறிக்கின்றன.
+====================================================== -->
+
+<header class="topbar">
+  <a href="#" class="logo">கூவல்</a>
+  <nav class="topnav label">
+    <a href="#quotes">மேற்கோள் அரங்கம்</a>
+    <a href="#footer">தொடர்புக்கு</a>
+  </nav>
+</header>
+
+<section class="sp">
+  <div class="sp-left">
+    <div class="sp-left-in">
+      <span class="sp-label"><i class="bar"></i>நேர்காணல்</span>
+      <h1 class="sp-title">{titleMain} <span class="hl">{titleHl}</span></h1>
+      <p class="sp-lead" id="typer" data-full={heroLead}></p>
+      <div class="sp-cta">
+        <a href="#" class="sp-btn">தொடர்ந்து படிக்க <span class="material-symbols-outlined">arrow_outward</span></a>
+        <span class="sp-author">{heroAuthor}</span>
+      </div>
+    </div>
+  </div>
+  <a href="#" class="sp-portrait" aria-label="சிறப்பு நேர்காணல்">
+    <img src={heroPhoto} alt={heroAuthor} onerror="this.src='/images/hero-placeholder.jpg'" />
+  </a>
+  <div class="sp-right">
+    <div class="sp-orbs">
+      {orbQuotes.map((q, i) => (
+        <div class={`orb o${i + 1}`}><blockquote>"{q}"</blockquote></div>
+      ))}
+    </div>
+    <div class="sp-join">
+      <div>
+        <h3>Join the Dialogue</h3>
+        <p>மாதாந்திர கட்டுரைகள், தனிச்சிறப்பு நேர்காணல்கள் உங்கள் இன்பாக்ஸில்.</p>
+      </div>
+      <a href="#" class="sp-join-btn">சேருங்கள்</a>
+    </div>
+  </div>
+</section>
+
+<section class="wall" id="quotes">
+  <span class="pill-soft">மேற்கோள் அரங்கம்</span>
+  <h2>சொற்களின் வெளி</h2>
+  <p class="sub">தமிழ்ப் படைப்பாளிகளின் சிந்தனைத் துளிகள்</p>
+  {withTint.length > 0 && (
+  <div class="pm-wall">
+    <div class="pm-particles">
+      {petals.map((s) => <span class="pm-petal" style={s}></span>)}
+    </div>
+    <div class="pm-row-depth pm-row-back">
+      <div class="pm-row pm-left">
+        {rowBack.map((q) => (
+            <a href="#" class={`pm-card tint-${q.tint}`}>
+              <span class="pm-cat-tag">{q.category}</span>
+              <span class="pm-mark">"</span>
+              <p class="pm-quote-ta">{q.quote}</p>
+              <div class="pm-attribution">
+                <div class="pm-avatar" style={q.photo ? `background-image:url('${q.photo}')` : undefined}></div>
+                <div>
+                  <div class="pm-name">{q.author}</div>
+                  {q.role && <div class="pm-role">{q.role}</div>}
+                </div>
+              </div>
+              <span class="pm-readmore">முழு நேர்காணலைப் படிக்க <span class="material-symbols-outlined">north_east</span></span>
+            </a>
+        ))}
+      </div>
+    </div>
+    <div class="pm-row-depth pm-row-front">
+      <div class="pm-row pm-right">
+        {rowFront.map((q) => (
+            <a href="#" class={`pm-card tint-${q.tint}`}>
+              <span class="pm-cat-tag">{q.category}</span>
+              <span class="pm-mark">"</span>
+              <p class="pm-quote-ta">{q.quote}</p>
+              <div class="pm-attribution">
+                <div class="pm-avatar" style={q.photo ? `background-image:url('${q.photo}')` : undefined}></div>
+                <div>
+                  <div class="pm-name">{q.author}</div>
+                  {q.role && <div class="pm-role">{q.role}</div>}
+                </div>
+              </div>
+              <span class="pm-readmore">முழு நேர்காணலைப் படிக்க <span class="material-symbols-outlined">north_east</span></span>
+            </a>
+        ))}
+      </div>
+    </div>
+  </div>
+)}
+</section>
+
+<footer id="footer">
+  <div class="f-in">
+    <div>
+      <div class="f-logo">கூவல்</div>
+      <div class="f-tag">இலக்கிய மின்னிதழ்</div>
+      <p class="f-desc">தமிழ்ச் சமூகத்தின் பன்மைத்துவத்தை கலை, இலக்கியம், சூழலியல் ஆளுமைகளின் வழி உணரும் மாதாந்திர இலக்கிய முன்னெடுப்பு.</p>
+    </div>
+    <div>
+      <h4>பகுதிகள்</h4>
+      <ul><li><a href="#">அட்டைக் கட்டுரை</a></li><li><a href="#">இந்த இதழில்</a></li><li><a href="#">நேர்காணல்கள்</a></li><li><a href="#">பழைய இதழ்கள்</a></li><li><a href="#">தொகுப்புகள்</a></li></ul>
+    </div>
+    <div>
+      <h4>மின்னிதழ் தகவல்</h4>
+      <ul><li><a href="#">எங்களைப் பற்றி</a></li><li><a href="#">ஆசிரியர் குறிப்பு</a></li><li><a href="#">படைப்புகள் அனுப்பு</a></li><li><a href="/admin/">நிர்வாக உள்நுழைவு</a></li></ul>
+    </div>
+    <div>
+      <h4>முக்கியக் குறிச்சொற்கள்</h4>
+      <div class="tags"><a href="#">இலக்கியம்</a><a href="#">கவிதையியல்</a><a href="#">வரலாறு</a><a href="#">நாட்டார் வழக்காறு</a><a href="#">விமர்சனம்</a><a href="#">சமூக நினைவு</a></div>
+    </div>
+  </div>
+  <div class="f-bot">
+    <span>© 2026 கூவல் (Koovel) இலக்கிய மின்னிதழ். அனைத்து உரிமைகளும் பாதுகாக்கப்பட்டவை.</span>
+    <nav><a href="#">தனியுரிமைக் கொள்கை</a><a href="#">தொடர்புக்கு</a></nav>
+  </div>
+</footer>
+
+<script is:inline>
+  // hero typewriter
+  (function(){var t=document.getElementById('typer');if(!t)return;var s=t.getAttribute('data-full'),i=0;
+    (function step(){t.textContent=s.slice(0,i++);if(i<=s.length)setTimeout(step,28);})();})();
+</script>
+</body>
+</html>
